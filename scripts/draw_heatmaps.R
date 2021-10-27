@@ -1,6 +1,6 @@
 library(xlsx)
 library(dplyr)
-library(tidyr)
+#library(tidyr)
 library(fastGene)
 library(pheatmap)
 library(RColorBrewer)
@@ -48,12 +48,16 @@ colnames(fpkm_clean)[2:ncol(fpkm_clean)] <- gsub(".FPKM", "", colnames(fpkm_clea
 colnames(fpkm_clean)
 
 # boxplot of the fpkm counts
-boxplot(fpkm_clean, las = 2)
+png('./output/FPKM_BOXPLOT.png', width=1500, height=1800, res=150)
+print(boxplot(fpkm_clean[,-1], las = 2))
+dev.off()
 
 # boxplot of log2 fpkm counts
 fpkm_clean[c(2:ncol(fpkm_clean))] <- log2(fpkm_clean[,c(2:ncol(fpkm_clean))] + 1)
-boxplot(fpkm_clean, las = 2)
 
+png('./output/FPKM_LOG_BOXPLOT.png', width=1500, height=1800, res=150)
+print(boxplot(fpkm_clean[, -1], las = 2))
+dev.off()
 # read the list of input files
 # common up regulated RAGs
 commonupregulatedRAGs_in_DRG <- read.xlsx('./gene_lists/commonupregulatedRAGs in DRG.xlsx',
