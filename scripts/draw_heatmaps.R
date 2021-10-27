@@ -1,6 +1,7 @@
 library(xlsx)
 library(dplyr)
 library(tidyr)
+library(fastGene)
 library(pheatmap)
 library(RColorBrewer)
 library("org.Mm.eg.db")
@@ -128,4 +129,22 @@ x <- t(scale(t(trans_rec)))
 x <- na.omit(x)
 draw_heatmap(x, 'trans_membrane_receptor')
 
+# read tubulin linked genes
+human_mouse <- read.csv('./scripts/HOM_MouseHuman.txt', sep='\t')
+human_genes <- subset(human_mouse, Common.Organism.Name == 'human')
+mouse_genes <- subset(human_mouse, Common.Organism.Name == 'mouse, laboratory')
 
+HOM_genes <- merge(human_genes, mouse_genes, by='DB.Class.Key')
+tubulin_linked <- read.xlsx('./gene_lists/Tubilin linked genes (10-26-21).xlsx', sheetIndex = 1)
+HOM_genes <- HOM_genes[, c(4,16)]
+colnames(HOM_genes) <- c('HUMAN_SYMBOL', 'MOUSE_SYMBOL')
+colnames(tubulin_linked)[1] <- 'HUMAN_SYMBOL'
+tubulin_linked <- merge(tubulin_linked, HOM_genes, by='HUMAN_SYMBOL')
+
+tubulin_linked <- fpkm_clean[fpkm_clean$GeneName %in% tubulin_linked$MOUSE_SYMBOL,]
+tubulin_linked <- tubulin_linked[!duplicated(tubulin_linked$GeneName),]
+rownames(tubulin_linked) <- tubulin_linked$GeneName
+tubulin_linked$GeneName <- NULL
+x <- t(scale(t(tubulin_linked)))
+x <- na.omit(x)
+draw_heatmap(x, 'tubulin_linked_genes')
