@@ -59,6 +59,10 @@ png('./output/FPKM_LOG_BOXPLOT.png', width=1500, height=1800, res=150)
 print(boxplot(fpkm_clean[, -1], las = 2))
 dev.off()
 
+# read human mouse orthologue
+ortho <- read.csv('./gene_lists/human_mouse_ortho.txt', sep='\t')
+colnames(ortho) <- c('MOUSE_GENES', 'HUMAN_GENES')
+
 # read the list of input files
 # common up regulated RAGs
 commonupregulatedRAGs_in_DRG <- read.xlsx('./gene_lists/commonupregulatedRAGs in DRG.xlsx',
@@ -133,6 +137,20 @@ trans_rec$GeneName <- NULL
 x <- t(scale(t(trans_rec)))
 x <- na.omit(x)
 draw_heatmap(x, 'trans_membrane_receptor', res=300, height = 6500, width=2500)
+
+# read immune related genes
+immune_genes <- read.xlsx('./gene_lists/immuerelatedgenes (10-27-21).xlsx', sheetIndex = 1)
+colnames(immune_genes)[3] <- 'HUMAN_GENES'
+immune_genes <- merge(immune_genes, ortho, by.x='HUMAN_GENES')
+immune_genes <- unique(immune_genes$MOUSE_GENES)
+immune_genes <- fpkm_clean[fpkm_clean$GeneName %in% immune_genes,]
+immune_genes <- immune_genes[!duplicated(immune_genes$GeneName),]
+rownames(immune_genes) <- immune_genes$GeneName
+immune_genes$GeneName <- NULL
+x <- t(scale(t(immune_genes)))
+x <- na.omit(x)
+draw_heatmap(x, 'immune_related_genes', res=300, height = 1500, width=2500)
+
 
 # read tubulin linked genes
 human_mouse <- read.csv('./scripts/HOM_MouseHuman.txt', sep='\t')
