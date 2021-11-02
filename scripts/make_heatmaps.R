@@ -61,9 +61,9 @@ anno <- gene_list[gene_list$Gene %in% rownames(x), ]
 rownames(anno) <- anno$Gene
 anno$Gene <- NULL
 x <- x[rownames(anno),]
-draw_heatmap(x, 'all_samples', anno = anno, res=300, height = 1200, width=1000)
+draw_heatmap(x, 'all_samples', anno = anno, res=300, height = 1200, width=1500)
 
 x <- t(scale(t(genes_sub[, c(1,2,3)])))
 x <- na.omit(x)
 x <- x[rownames(anno),]
-draw_heatmap(x, 'no_X5i.28d', anno = anno, res=300, height = 1200, width=1000)
+draw_heatmap(x, 'no_X5i.28d', anno = anno, res=300, height = 1200, width=1500)
