@@ -40,7 +40,7 @@ ampli_df <- ampli_df %>% column_to_rownames('Gene')
 
 # Read gene list
 #gene_list <- read.csv('./data/gene_list.csv')
-gene_list <- read.xlsx('./data/Gene list.xlsx', sheetIndex = 1)
+gene_list <- read.xlsx('./data/Gene_list.xlsx', sheetIndex = 3)
   
 png('./output/boxplot_raw.png', width=1500, height = 1500, res=150)
 print(boxplot(ampli_df))
@@ -67,3 +67,4 @@ x <- t(scale(t(genes_sub[, c(1,2,3)])))
 x <- na.omit(x)
 x <- x[rownames(anno),]
 draw_heatmap(x, 'no_X5i.28d', anno = anno, res=300, height = 1200, width=1500)
+
