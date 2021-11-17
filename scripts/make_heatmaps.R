@@ -53,20 +53,25 @@ print(boxplot(ampli_log2))
 dev.off()
 
 
+
 genes_sub <- ampli_log2[rownames(ampli_log2) %in% gene_list$Gene,]
 genes_sub <- genes_sub[, c(4,2,3,1)]
-x <- t(scale(t(genes_sub)))
-x <- na.omit(x)
+
 # Create annotation col
-anno <- gene_list[gene_list$Gene %in% rownames(x), ]
+anno <- gene_list[gene_list$Gene %in% rownames(genes_sub), ]
 rownames(anno) <- anno$Gene
 anno$Gene <- NULL
+x <- genes_sub
+
 x <- x[rownames(anno),]
+x <- t(scale(t(x)))
+x <- na.omit(x)
+x <- as.data.frame(x)
 draw_heatmap(x, 'all_samples', anno = anno, res=300, height = 1200, width=1500)
 
-x <- t(scale(t(genes_sub[, c(1,2,3)])))
-#x <- na.omit(x)
+x <- genes_sub[, c(1,2,3)]
 x <- x[rownames(anno), ]
+x <- t(scale(t(x)))
 draw_heatmap(x, 'no_X5i.28d', anno = anno, res=300, height = 1200, width=1500)
 
 # NCATS vs NGN3
@@ -74,12 +79,14 @@ ncats_df <- readRDS('./data/DESeq_human_p53.Rds')
 ncats_tpm <- ncats_df@assays@data$abundance
 
 ncats_tpm <- ensembl2symbol(ncats_tpm)
-
-x <- t(scale(t(as.matrix(ncats_tpm))))
-x <- na.omit(x)
-x <- as.data.frame(x)
+x <- ncats_tpm
 x <- x[rownames(anno), ]
+x <- t(scale(t(as.matrix(x))))
+x <- as.data.frame(x)
+
 colnames(x) <- stringr::str_replace(colnames(x), '(NCATS)\\_|(NGN3)\\_', '') 
 
+# rearrange columns
+x <- x[,c(8,12,1,2,4,9,13,3,5,6,10,14,7,11,15)]
 draw_heatmap(x, 'ncats_nocicep', anno = anno, res=300, height = 1200, width=1500)
 
