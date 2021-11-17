@@ -7,6 +7,7 @@ library(RColorBrewer)
 
 # set wd
 setwd('~/gitHub/panacea-rnaseq/woolf_sensory_ampliseq/')
+source('./scripts/functions.R')
 
 # functions
 get_colors <- function(){
@@ -67,4 +68,18 @@ x <- t(scale(t(genes_sub[, c(1,2,3)])))
 #x <- na.omit(x)
 x <- x[rownames(anno), ]
 draw_heatmap(x, 'no_X5i.28d', anno = anno, res=300, height = 1200, width=1500)
+
+# NCATS vs NGN3
+ncats_df <- readRDS('./data/DESeq_human_p53.Rds')
+ncats_tpm <- ncats_df@assays@data$abundance
+
+ncats_tpm <- ensembl2symbol(ncats_tpm)
+
+x <- t(scale(t(as.matrix(ncats_tpm))))
+x <- na.omit(x)
+x <- as.data.frame(x)
+x <- x[rownames(anno), ]
+colnames(x) <- stringr::str_replace(colnames(x), '(NCATS)\\_|(NGN3)\\_', '') 
+
+draw_heatmap(x, 'ncats_nocicep', anno = anno, res=300, height = 1200, width=1500)
 
