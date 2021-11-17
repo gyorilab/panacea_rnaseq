@@ -87,6 +87,6 @@ x <- as.data.frame(x)
 colnames(x) <- stringr::str_replace(colnames(x), '(NCATS)\\_|(NGN3)\\_', '') 
 
 # rearrange columns
-x <- x[,c(8,12,1,2,4,9,13,3,5,6,10,14,7,11,15)]
+x <- x[,c(7,11,15,8,12,1,2,4,9,13,3,5,6,10,14)]
 draw_heatmap(x, 'ncats_nocicep', anno = anno, res=300, height = 1200, width=1500)
 
