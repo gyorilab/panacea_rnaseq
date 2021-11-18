@@ -61,8 +61,8 @@ genes_sub <- genes_sub[, c(4,2,3,1)]
 anno <- gene_list[gene_list$Gene %in% rownames(genes_sub), ]
 rownames(anno) <- anno$Gene
 anno$Gene <- NULL
-x <- genes_sub
 
+x <- genes_sub
 x <- x[rownames(anno),]
 x <- t(scale(t(x)))
 x <- na.omit(x)
@@ -84,9 +84,11 @@ x <- x[rownames(anno), ]
 x <- t(scale(t(as.matrix(x))))
 x <- as.data.frame(x)
 
-colnames(x) <- stringr::str_replace(colnames(x), '(NCATS)\\_|(NGN3)\\_', '') 
+# REMOVE NCATS
+x <- x[, -c(1,2,3,4,5,6)]
+colnames(x) <- stringr::str_replace(colnames(x), '(NGN3)\\_', '') 
 
 # rearrange columns
-x <- x[,c(7,11,15,8,12,1,2,4,9,13,3,5,6,10,14)]
-draw_heatmap(x, 'ncats_nocicep', anno = anno, res=300, height = 1200, width=1500)
+x <- x[,c(1,5,9,2,6,3,7,4,8)]
+draw_heatmap(x, 'ncats_nocicep', anno = anno, res=300, height = 1800, width=1300)
 
