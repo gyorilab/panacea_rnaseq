@@ -21,3 +21,22 @@ draw_heatmap <- function(x, fname, height=4800,
   print(h)
   dev.off()
 }
+
+get_relative_abundance <- function(pro_abundance_df){
+  ion_channels <- list('Nav1.3' = 'SCN3A',
+                       'Nav1.7' = 'SCN9A',
+                       'Nav1.9' = 'SCN11A')
+  for(i in 1:length(ion_channels)){
+    ion = ion_channels[[i]]
+    col_name <- paste0('relative_abundance_to_', names(ion_channels)[i])
+    pro_abundance_df[, col_name] <- NA
+    if(ion %in% pro_abundance_df$Gene.name == T){
+      ion_row <- which(pro_abundance_df$Gene.name == ion)
+      for (r in 1:nrow(pro_abundance_df)) {
+        g_abd <- pro_abundance_df[r, 'Abundance.score']
+        pro_abundance_df[r, col_name] <- g_abd/pro_abundance_df[ion_row, 'Abundance.score']
+      }
+    }
+  }
+  return(pro_abundance_df)
+}
