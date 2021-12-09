@@ -74,6 +74,56 @@ drg_exc  <- read.xlsx(paste0(wd, 'gene_lists/EXtargets2021-07-17 2.0.xlsx'), she
 drg_exc <- drg_exc %>% dplyr::select(Symbol, Entrez.Gene.Name)
 colnames(drg_exc)[1] <- c('Human_symbol')
 
+# Top 20 TF
+top_tf <- read.xlsx('./gene_lists/TFs from Ginty paper.xlsx', sheetIndex = 1)
+top_tf <- top_tf %>% dplyr::select('ID', 'Symbol')
+colnames(top_tf) <- c('ID', 'Human_symbol')
+
+
+#ipsc protein quant
+ipsc_proquant <- read.xlsx('./gene_lists/Panacea_April2021_iPSC_proteinquant_working_forSam.xlsx', sheetIndex = 1)
+#motor neuron
+ipsc_proquant$motor_neurons_avg <- rowMeans(ipsc_proquant[, c(8,9,10)])
+#cortical neurons
+ipsc_proquant$cortical_neurons_avg <- rowMeans(ipsc_proquant[ ,c(11,12,13)])
+#ipsc
+ipsc_proquant$ipsc_avg <- rowMeans(ipsc_proquant[ ,c(14,15,16)])
+# 2weeks
+ipsc_proquant$nociceptor_2W_avg <- rowMeans(ipsc_proquant[ ,c(17,18,19)])
+#4weeks
+ipsc_proquant$nociceptor_4W_avg <- rowMeans(ipsc_proquant[ ,c(20,21)])
+#8weeks
+ipsc_proquant$nociceptor_8W_avg <- rowMeans(ipsc_proquant[ ,c(22,23)])
+
+cnums <- which(colnames(ipsc_proquant) %in% na.omit(str_extract(colnames(ipsc_proquant), '.*avg')))
+ipsc_proquant <- ipsc_proquant[,c(2,cnums)]
+colnames(ipsc_proquant)[1] <- c('Human_symbol')
+
+
+# Plot ipsc
+ipsc_proquant_df <- ipsc_proquant[ipsc_proquant$Human_symbol %in% top_tf$Human_symbol, ]
+ion_ipsc_proquant_df <- ipsc_proquant[ipsc_proquant$Human_symbol %in% ion_channel$Symbol, ]
+ion_ipsc_proquant_df <- ion_ipsc_proquant_df[!duplicated(ion_ipsc_proquant_df$Human_symbol), ]
+rownames(ion_ipsc_proquant_df) <- ion_ipsc_proquant_df$Human_symbol
+ion_ipsc_proquant_df$Human_symbol <- NULL
+
+draw_heatmap(ion_ipsc_proquant_df, fname = 'ipsc_ion_no_scale', res=200, height=1500, width = 500)
+draw_heatmap(t(scale(t(ion_ipsc_proquant_df))), fname = 'ipsc_ion_scale', res=200, height=1500, width = 500)
+
+
+rownames(ipsc_proquant_df) <- ipsc_proquant_df$Human_symbol
+ipsc_proquant_df$Human_symbol <- NULL
+draw_heatmap(ipsc_proquant_df, fname = 'ipsc_tf', res=200, height=1000, width = 500)
+write.csv(merged_df_tf, './output/merged_df_transcription_factors.csv')
+
+
+# Plot tf
+merged_df_tf <- merged_df[merged_df$Human_symbol %in% top_tf$Human_symbol, ]
+rownames(merged_df_tf) <- merged_df_tf$Human_symbol
+merged_df_tf$Human_symbol <- NULL
+x <- t(scale(t(merged_df_tf)))
+draw_heatmap(x, fname = 'transcription_factors', res=300, height=1500, width = 1000)
+write.csv(merged_df_tf, './output/merged_df_transcription_factors.csv')
 
 # Plot DRG exc
 merged_df_drg <- merged_df[merged_df$Human_symbol %in% drg_exc$Human_symbol, ]

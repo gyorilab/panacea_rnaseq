@@ -1,9 +1,10 @@
 library(xlsx)
 library(stringr)
+library(RColorBrewer)
 
 wd <- paste0('~/gitHub/panacea-rnaseq/h_ipsc_paper/')
 setwd(wd)
-
+source('./functions.R')
 # Read Human mouse ortho table
 ortho <- read.csv('~/.biomart/human_mouse_ortho.tsv', sep='\t')
 
@@ -106,8 +107,25 @@ for(cols in 1:ncol(transcirption_nav1.7)){
   pro_df[no_genes, ] <- 0
   pro_df$Gene.name <- rownames(pro_df)
   col_no <- which(colnames(pro_df) == na.omit(str_extract(colnames(pro_df), '.*1.7.*')))
-  trans_vs_pro[, names(pro_abundance_list)[cols]] <- pro_df[,col_no]/transcirption_nav1.7[, cols]
+  trans_vs_pro[, names(pro_abundance_list)[cols]] <- (pro_df[,col_no]+1)/(transcirption_nav1.7[, cols]+1)
 
 }
+trans_vs_pro[is.na(trans_vs_pro)] <- 0
+trans_vs_pro[sapply(trans_vs_pro, is.infinite)] <- 0
+x <- t(scale(t(trans_vs_pro)))
+x <- na.omit(x)
 
 
+breaksList <- seq(0, 10, by = 2)
+colors <- colorRampPalette(rev(brewer.pal(n = 8, name = "RdYlBu")))(length(breaksList))
+p <- pheatmap(trans_vs_pro,
+              color = colors,
+              border_color = NA,
+              fontsize_row = 4, 
+              cluster_cols = F,
+              breaks = breaksList)
+
+png(paste0('./output/', 'nav1.7_transcript_proteome', '.png'), height=4800,
+    width=2000, res=250)
+print(p)
+dev.off()
