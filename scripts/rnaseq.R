@@ -1,12 +1,17 @@
 library(dplyr)
-library(tidyr)
 library(DESeq2)
 library(tidyverse)
+library(org.Rn.eg.db)
+library(clusterProfiler)
 
 # Set wd
 setwd('~/gitHub/panacea-rnaseq/cold_slurry_drg/')
 dir.create('./output/DESEQ', showWarnings = F)
 source('./scripts/functions.R')
+
+# Read Human Rat ortho
+human_rat <- read.csv('./gene_lists/human_rat_ortho.tsv', sep='\t')
+colnames(human_rat) <- c('rat_stable_id', 'rat_gene_name', 'human_stable_id', 'human_gene_name')
 
 # Read SIF
 sif <- read.csv('./counts/sif.tsv', sep='\t', row.names = 1)
@@ -43,50 +48,109 @@ vst <- varianceStabilizingTransformation(dds)
 vsd <- assay(vst)
 plot_pca('CS14D_2_remove.png', vst, 'group')
 
+fun_res <- list()
+
 # CS ipsi 7D vs CTRL ipsi
 CS_ipsi_7D_vs_ctrl_ipsi <- make_comparisons(dds, 
                                             c("group", "CS_ipsilateral_7D", "CTRL_ipsilateral_0H"),
                                             gene_names)
 write.csv(CS_ipsi_7D_vs_ctrl_ipsi, './output/DESEQ/CS_ipsi_7D_vs_ctrl_ipsi.csv')
+diff_genes <- get_diff_genes_subset(CS_ipsi_7D_vs_ctrl_ipsi, 0.05, 1, human_rat)
+write.csv(diff_genes , './output/DESEQ/diff_CS_ipsi_7D_vs_ctrl_ipsi.csv')
+##
+entrez_ids <- convert_to_entrez(rownames(diff_genes), org.Rn.eg.db)
+fun_res[['CS_ipsi_7D_vs_ctrl_ipsi']] <- run_functional_analysis('CS_ipsi_7D_vs_ctrl_ipsi', entrez_ids, 'rno', org.Rn.eg.db)
+##
 plot_volcano(CS_ipsi_7D_vs_ctrl_ipsi, 0.05, 2, 'CS_ipsi_7D_vs_ctrl_ipsi_padj_0.05_logfc_2')
 plot_volcano(CS_ipsi_7D_vs_ctrl_ipsi, 0.05, 1.5, 'CS_ipsi_7D_vs_ctrl_ipsi_padj_0.05_logfc_1.5')
 plot_volcano(CS_ipsi_7D_vs_ctrl_ipsi, 0.05, 1, 'CS_ipsi_7D_vs_ctrl_ipsi_padj_0.05_logfc_1')
+
+
 
 # CS ipsi 14D vs CTRL ipsi
 CS_ipsi_14D_vs_ctrl_ipsi <- make_comparisons(dds, 
                                             c("group", "CS_ipsilateral_14D", "CTRL_ipsilateral_0H"),
                                             gene_names)
 write.csv(CS_ipsi_14D_vs_ctrl_ipsi, './output/DESEQ/CS_ipsi_14D_vs_ctrl_ipsi.csv')
+diff_genes <- get_diff_genes_subset(CS_ipsi_14D_vs_ctrl_ipsi, 0.05, 1, human_rat)
+write.csv(diff_genes , './output/DESEQ/diff_CS_ipsi_14D_vs_ctrl_ipsi.csv')
+##
+entrez_ids <- convert_to_entrez(rownames(diff_genes), org.Rn.eg.db)
+fun_res[['CS_ipsi_14D_vs_ctrl_ipsi']] <- run_functional_analysis('CS_ipsi_14D_vs_ctrl_ipsi', entrez_ids, 'rno', org.Rn.eg.db)
+
+
 plot_volcano(CS_ipsi_14D_vs_ctrl_ipsi, 0.05, 2, 'CS_ipsi_14D_vs_ctrl_ipsi_padj_0.05_logfc_2')
 plot_volcano(CS_ipsi_14D_vs_ctrl_ipsi, 0.05, 1.5, 'CS_ipsi_14D_vs_ctrl_ipsi_padj_0.05_logfc_1.5')
 plot_volcano(CS_ipsi_14D_vs_ctrl_ipsi, 0.05, 1, 'CS_ipsi_14D_vs_ctrl_ipsi_padj_0.05_logfc_1')
 
 
-# RT 6H ipsi vs CS ipsi 7D
-RT_ipsi_6H_vs_CS_ipsi_7 <- make_comparisons(dds, 
-                                            c("group", "RT_ipsilateral_6H", "CS_ipsilateral_7D"),
+# CS ipsi 7D vs RT 6H ipsi
+CS_ipsi_7D_vs_RT_ipsi_6H <- make_comparisons(dds, 
+                                            c("group", "CS_ipsilateral_7D", "RT_ipsilateral_6H"),
                                             gene_names)
-write.csv(RT_ipsi_6H_vs_CS_ipsi_7, './output/DESEQ/RT_ipsi_6H_vs_CS_ipsi_7.csv')
-plot_volcano(RT_ipsi_6H_vs_CS_ipsi_7, 0.05, 2, 'RT_ipsi_6H_vs_CS_ipsi_7_padj_0.05_logfc_2')
-plot_volcano(RT_ipsi_6H_vs_CS_ipsi_7, 0.05, 1.5, 'RT_ipsi_6H_vs_CS_ipsi_7_padj_0.05_logfc_1.5')
-plot_volcano(RT_ipsi_6H_vs_CS_ipsi_7, 0.05, 1, 'RT_ipsi_6H_vs_CS_ipsi_7_padj_0.05_logfc_1')
+write.csv(CS_ipsi_7D_vs_RT_ipsi_6H, './output/DESEQ/CS_ipsi_7D_vs_RT_ipsi_6H.csv')
+diff_genes <- get_diff_genes_subset(CS_ipsi_7D_vs_RT_ipsi_6H, 0.05, 1, human_rat)
+write.csv(diff_genes , './output/DESEQ/diff_CS_ipsi_7D_vs_RT_ipsi_6H.csv')
 
-# RT 6H ipsi vs CS ipsi 14D
-RT_ipsi_6H_vs_CS_ipsi_14D <- make_comparisons(dds, 
-                                            c("group", "RT_ipsilateral_6H", "CS_ipsilateral_14D"),
+##
+entrez_ids <- convert_to_entrez(rownames(diff_genes), org.Rn.eg.db)
+fun_res[['CS_ipsi_7D_vs_RT_ipsi_6']] <- run_functional_analysis('CS_ipsi_7D_vs_RT_ipsi_6', entrez_ids, 'rno', org.Rn.eg.db)
+
+plot_volcano(CS_ipsi_7D_vs_RT_ipsi_6H, 0.05, 2, 'CS_ipsi_7D_vs_RT_ipsi_6H_padj_0.05_logfc_2')
+plot_volcano(CS_ipsi_7D_vs_RT_ipsi_6H, 0.05, 1.5, 'CS_ipsi_7D_vs_RT_ipsi_6H_padj_0.05_logfc_1.5')
+plot_volcano(CS_ipsi_7D_vs_RT_ipsi_6H, 0.05, 1, 'CS_ipsi_7D_vs_RT_ipsi_6H_padj_0.05_logfc_1')
+
+
+# CS ipsi 14D vs RT 6H ipsi
+CS_ipsi_14D_vs_RT_ipsi_6H <- make_comparisons(dds, 
+                                            c("group", "CS_ipsilateral_14D", "RT_ipsilateral_6H"),
                                             gene_names)
-write.csv(RT_ipsi_6H_vs_CS_ipsi_14D, './output/DESEQ/RT_ipsi_6H_vs_CS_ipsi_14D.csv')
-plot_volcano(RT_ipsi_6H_vs_CS_ipsi_14D, 0.05, 2, 'RT_ipsi_6H_vs_CS_ipsi_14D_padj_0.05_logfc_2')
-plot_volcano(RT_ipsi_6H_vs_CS_ipsi_14D, 0.05, 1.5, 'RT_ipsi_6H_vs_CS_ipsi_14D_padj_0.05_logfc_1.5')
-plot_volcano(RT_ipsi_6H_vs_CS_ipsi_14D, 0.05, 1, 'RT_ipsi_6H_vs_CS_ipsi_14D_padj_0.05_logfc_1')
+write.csv(CS_ipsi_14D_vs_RT_ipsi_6H, './output/DESEQ/CS_ipsi_14D_vs_RT_ipsi_6H.csv')
+diff_genes <- get_diff_genes_subset(CS_ipsi_14D_vs_RT_ipsi_6H, 0.05, 1, human_rat)
+write.csv(diff_genes , './output/DESEQ/diff_CS_ipsi_14D_vs_RT_ipsi_6H.csv')
+##
+entrez_ids <- convert_to_entrez(rownames(diff_genes), org.Rn.eg.db)
+fun_res[['CS_ipsi_14D_vs_RT_ipsi_6H']] <- run_functional_analysis('CS_ipsi_14D_vs_RT_ipsi_6H', entrez_ids, 'rno', org.Rn.eg.db)
+
+plot_volcano(CS_ipsi_14D_vs_RT_ipsi_6H, 0.05, 2, 'CS_ipsi_14D_vs_RT_ipsi_6H_padj_0.05_logfc_2')
+plot_volcano(CS_ipsi_14D_vs_RT_ipsi_6H, 0.05, 1.5, 'CS_ipsi_14D_vs_RT_ipsi_6H_padj_0.05_logfc_1.5')
+plot_volcano(CS_ipsi_14D_vs_RT_ipsi_6H, 0.05, 1, 'CS_ipsi_14D_vs_RT_ipsi_6H_padj_0.05_logfc_1')
+
 
 #14 day CS ipsi vs 14 day CS contra
 CS_ipsilateral_14D_vs_CS_contralateral_14D <- make_comparisons(dds, 
                                               c("group", "CS_ipsilateral_14D", "CS_contralateral_14D"),
                                               gene_names)
 write.csv(CS_ipsilateral_14D_vs_CS_contralateral_14D , './output/DESEQ/CS_ipsilateral_14D_vs_CS_contralateral_14D.csv')
+diff_genes <- get_diff_genes_subset(CS_ipsilateral_14D_vs_CS_contralateral_14D, 0.05, 1, human_rat)
+write.csv(diff_genes , './output/DESEQ/diff_CS_ipsilateral_14D_vs_CS_contralateral_14D.csv')
+##
+entrez_ids <- convert_to_entrez(rownames(diff_genes), org.Rn.eg.db)
+fun_res[['CS_ipsilateral_14D_vs_CS_contralateral_14D']] <- run_functional_analysis('CS_ipsilateral_14D_vs_CS_contralateral_14D', entrez_ids, 'rno', org.Rn.eg.db)
+
 plot_volcano(CS_ipsilateral_14D_vs_CS_contralateral_14D , 0.05, 2, 'CS_ipsilateral_14D_vs_CS_contralateral_14D_padj_0.05_logfc_2')
 plot_volcano(CS_ipsilateral_14D_vs_CS_contralateral_14D , 0.05, 1.5, 'CS_ipsilateral_14D_vs_CS_contralateral_14D_padj_0.05_logfc_1.5')
 plot_volcano(CS_ipsilateral_14D_vs_CS_contralateral_14D , 0.05, 1, 'CS_ipsilateral_14D_vs_CS_contralateral_14D_padj_0.05_logfc_1')
 
+
+#7 day CS ipsi vs 7 day CS contra
+CS_ipsilateral_7D_vs_CS_contralateral_7D <- make_comparisons(dds, 
+                                                               c("group", "CS_ipsilateral_7D", "CS_contralateral_7D"),
+                                                               gene_names)
+write.csv(CS_ipsilateral_7D_vs_CS_contralateral_7D , './output/DESEQ/CS_ipsilateral_7D_vs_CS_contralateral_7D.csv')
+diff_genes <- get_diff_genes_subset(CS_ipsilateral_7D_vs_CS_contralateral_7D, 0.05, 1, human_rat)
+write.csv(diff_genes , './output/DESEQ/diff_CS_ipsilateral_7D_vs_CS_contralateral_7D.csv')
+##
+entrez_ids <- convert_to_entrez(rownames(diff_genes), org.Rn.eg.db)
+fun_res[['CS_ipsilateral_7D_vs_CS_contralateral_7D']] <- run_functional_analysis('CS_ipsilateral_7D_vs_CS_contralateral_7D', entrez_ids, 'rno', org.Rn.eg.db)
+
+plot_volcano(CS_ipsilateral_7D_vs_CS_contralateral_7D , 0.05, 2, 'CS_ipsilateral_7D_vs_CS_contralateral_7D_padj_0.05_logfc_2')
+plot_volcano(CS_ipsilateral_7D_vs_CS_contralateral_7D , 0.05, 1.5, 'CS_ipsilateral_7D_vs_CS_contralateral_7D_padj_0.05_logfc_1.5')
+plot_volcano(CS_ipsilateral_7D_vs_CS_contralateral_7D , 0.05, 1, 'CS_ipsilateral_7D_vs_CS_contralateral_7D_padj_0.05_logfc_1')
+
+
+# Make dotplots
+all_samples <- list()
+all_samples[['all']] <- fun_res
+make_functional_analysis_dotplot(all_samples)
 
