@@ -14,7 +14,7 @@ human_rat <- read.csv('./gene_lists/human_rat_ortho.tsv', sep='\t')
 colnames(human_rat) <- c('rat_stable_id', 'rat_gene_name', 'human_stable_id', 'human_gene_name')
 
 # Read SIF
-sif <- read.csv('./counts/sif.tsv', sep='\t', row.names = 1)
+sif <- read.csv('./counts/sample_information.sif', sep='\t', row.names = 1)
 sif <- sif %>% mutate('group' = paste(type, side, time, sep = '_'))
 
 # Read counts file
@@ -36,7 +36,7 @@ vst <- varianceStabilizingTransformation(dds)
 vsd <- assay(vst)
 plot_pca('all_samples.png', vst, 'group')
 
-# remove CS14d_2_ipsi as it is a suspected outlier
+# Remove CS14d_2_ipsi as it is a suspected outlier
 counts_df <- counts_df[, -which(colnames(counts_df) == 'CS14d_2_DRG_Ipsi')]
 sif <- sif[-which(rownames(sif) == 'CS14d_2_DRG_Ipsi'), ]
 dds = DESeqDataSetFromMatrix(as.matrix(counts_df), 
@@ -50,12 +50,43 @@ plot_pca('CS14D_2_remove.png', vst, 'group')
 
 fun_res <- list()
 
+
+# CS ipsi vs CS contra at 3 days and 7 days
+sif_mod <- subset(sif, time=='3D' | time=='7D')
+counts_df_mod <- counts_df[,rownames(sif_mod)]
+all_samples_mod <- colnames(counts_df_mod)
+
+dds_mod = DESeqDataSetFromMatrix(as.matrix(counts_df_mod), 
+                                 colData=sif_mod, 
+                                 design=~side)
+
+dds_mod <- DESeq(dds_mod)
+vst_mod <- varianceStabilizingTransformation(dds_mod)
+vsd_mod <- assay(vst_mod)
+
+cs_3d_7d_ipsi_vs_3d_7d_contra <- make_comparisons(dds_mod, 
+                                                  c("side", "ipsilateral", 
+                                                    "contralateral"),
+                                                  gene_names)
+
+write.csv(cs_3d_7d_ipsi_vs_3d_7d_contra, './output/DESEQ/CS_ipsi_3D_7D_vs_CS_contra_3D_7D.csv')
+diff_genes <- get_diff_genes_subset(cs_3d_7d_ipsi_vs_3d_7d_contra, 0.05, 2, human_rat)
+write.csv(diff_genes , './output/DESEQ/diff_CS_ipsi_3D_7D_vs_CS_contra_3D_7D.csv')
+
+##
+entrez_ids <- convert_to_entrez(rownames(diff_genes), OrgDb = org.Rn.eg.db)$ENTREZID
+fun_res[['cs_3d_7d_ipsi_vs_3d_7d_contra']] <- run_functional_analysis('cs_3d_7d_ipsi_vs_3d_7d_contra', entrez_ids, 'rno', org.Rn.eg.db)
+
+##
+plot_volcano(cs_3d_7d_ipsi_vs_3d_7d_contra, 0.05, 2, 'CS_ipsi_3D_7D_vs_CS_contra_3D_7D_padj_0.05_logfc_2')
+
+
 # CS ipsi 7D vs CTRL ipsi
 CS_ipsi_7D_vs_ctrl_ipsi <- make_comparisons(dds, 
                                             c("group", "CS_ipsilateral_7D", "CTRL_ipsilateral_0H"),
                                             gene_names)
 write.csv(CS_ipsi_7D_vs_ctrl_ipsi, './output/DESEQ/CS_ipsi_7D_vs_ctrl_ipsi.csv')
-diff_genes <- get_diff_genes_subset(CS_ipsi_7D_vs_ctrl_ipsi, 0.05, 1, human_rat)
+diff_genes <- get_diff_genes_subset(CS_ipsi_7D_vs_ctrl_ipsi, 0.05, 2, human_rat)
 write.csv(diff_genes , './output/DESEQ/diff_CS_ipsi_7D_vs_ctrl_ipsi.csv')
 ##
 entrez_ids <- convert_to_entrez(rownames(diff_genes), org.Rn.eg.db)
@@ -72,7 +103,7 @@ CS_ipsi_14D_vs_ctrl_ipsi <- make_comparisons(dds,
                                             c("group", "CS_ipsilateral_14D", "CTRL_ipsilateral_0H"),
                                             gene_names)
 write.csv(CS_ipsi_14D_vs_ctrl_ipsi, './output/DESEQ/CS_ipsi_14D_vs_ctrl_ipsi.csv')
-diff_genes <- get_diff_genes_subset(CS_ipsi_14D_vs_ctrl_ipsi, 0.05, 1, human_rat)
+diff_genes <- get_diff_genes_subset(CS_ipsi_14D_vs_ctrl_ipsi, 0.05, 2, human_rat)
 write.csv(diff_genes , './output/DESEQ/diff_CS_ipsi_14D_vs_ctrl_ipsi.csv')
 ##
 entrez_ids <- convert_to_entrez(rownames(diff_genes), org.Rn.eg.db)
@@ -147,6 +178,93 @@ fun_res[['CS_ipsilateral_7D_vs_CS_contralateral_7D']] <- run_functional_analysis
 plot_volcano(CS_ipsilateral_7D_vs_CS_contralateral_7D , 0.05, 2, 'CS_ipsilateral_7D_vs_CS_contralateral_7D_padj_0.05_logfc_2')
 plot_volcano(CS_ipsilateral_7D_vs_CS_contralateral_7D , 0.05, 1.5, 'CS_ipsilateral_7D_vs_CS_contralateral_7D_padj_0.05_logfc_1.5')
 plot_volcano(CS_ipsilateral_7D_vs_CS_contralateral_7D , 0.05, 1, 'CS_ipsilateral_7D_vs_CS_contralateral_7D_padj_0.05_logfc_1')
+
+
+
+# 1D IPSI vs 6H RT IPSI
+CS_ipsilateral_1D_vs_RT_ipsilateral_6H <- make_comparisons(dds, 
+                                                           c("group", "CS_ipsilateral_1D", "RT_ipsilateral_6H"),
+                                                           gene_names)
+write.csv(CS_ipsilateral_1D_vs_RT_ipsilateral_6H  , './output/DESEQ/CS_ipsilateral_1D_vs_RT_ipsilateral_6H .csv')
+diff_genes <- get_diff_genes_subset(CS_ipsilateral_1D_vs_RT_ipsilateral_6H, 0.05, 2, human_rat)
+write.csv(diff_genes , './output/DESEQ/diff_CS_ipsilateral_1D_vs_RT_ipsilateral_6H.csv')
+##
+entrez_ids <- convert_to_entrez(rownames(diff_genes), org.Rn.eg.db)
+fun_res[['CS_ipsilateral_1D_vs_RT_ipsilateral_6H']] <- run_functional_analysis('CS_ipsilateral_1D_vs_RT_ipsilateral_6H', 
+                                                                               entrez_ids, 
+                                                                               'rno', 
+                                                                               org.Rn.eg.db)
+
+plot_volcano(CS_ipsilateral_1D_vs_RT_ipsilateral_6H , 0.05, 2, 'CS_ipsilateral_1D_vs_RT_ipsilateral_6H_padj_0.05_logfc_2')
+plot_volcano(CS_ipsilateral_1D_vs_RT_ipsilateral_6H , 0.05, 1.5, 'CS_ipsilateral_1D_vs_RT_ipsilateral_6H_padj_0.05_logfc_1.5')
+plot_volcano(CS_ipsilateral_1D_vs_RT_ipsilateral_6H , 0.05, 1, 'CS_ipsilateral_1D_vs_RT_ipsilateral_6H_padj_0.05_logfc_1')
+
+
+# 3D IPSI vs 6H RT IPSI
+CS_ipsilateral_3D_vs_RT_ipsilateral_6H <- make_comparisons(dds, 
+                                                           c("group", 
+                                                             "CS_ipsilateral_3D", 
+                                                             "RT_ipsilateral_6H"),
+                                                           gene_names)
+write.csv(CS_ipsilateral_3D_vs_RT_ipsilateral_6H  , './output/DESEQ/CS_ipsilateral_3D_vs_RT_ipsilateral_6H .csv')
+diff_genes <- get_diff_genes_subset(CS_ipsilateral_3D_vs_RT_ipsilateral_6H, 0.05, 2, human_rat)
+write.csv(diff_genes , './output/DESEQ/diff_CS_ipsilateral_3D_vs_RT_ipsilateral_6H.csv')
+
+##
+entrez_ids <- convert_to_entrez(rownames(diff_genes), org.Rn.eg.db)
+fun_res[['CS_ipsilateral_1D_vs_RT_ipsilateral_6H']] <- run_functional_analysis('CS_ipsilateral_1D_vs_RT_ipsilateral_6H', 
+                                                                               entrez_ids, 
+                                                                               'rno', 
+                                                                               org.Rn.eg.db)
+
+plot_volcano(CS_ipsilateral_3D_vs_RT_ipsilateral_6H , 0.05, 2, 'CS_ipsilateral_3D_vs_RT_ipsilateral_6H_padj_0.05_logfc_2')
+plot_volcano(CS_ipsilateral_3D_vs_RT_ipsilateral_6H , 0.05, 1.5, 'CS_ipsilateral_3D_vs_RT_ipsilateral_6H_padj_0.05_logfc_1.5')
+plot_volcano(CS_ipsilateral_3D_vs_RT_ipsilateral_6H , 0.05, 1, 'CS_ipsilateral_3D_vs_RT_ipsilateral_6H_padj_0.05_logfc_1')
+
+
+# 7D IPSI vs 6H RT IPSI
+CS_ipsilateral_7D_vs_RT_ipsilateral_6H <- make_comparisons(dds, 
+                                                           c("group", "CS_ipsilateral_7D", "RT_ipsilateral_6H"),
+                                                           gene_names)
+write.csv(CS_ipsilateral_7D_vs_RT_ipsilateral_6H  , './output/DESEQ/CS_ipsilateral_7D_vs_RT_ipsilateral_6H.csv')
+diff_genes <- get_diff_genes_subset(CS_ipsilateral_7D_vs_RT_ipsilateral_6H, 0.05, 2, human_rat)
+write.csv(diff_genes , './output/DESEQ/diff_CS_ipsilateral_7D_vs_RT_ipsilateral_6H.csv')
+
+##
+entrez_ids <- convert_to_entrez(rownames(diff_genes), org.Rn.eg.db)
+fun_res[['CS_ipsilateral_1D_vs_RT_ipsilateral_6H']] <- run_functional_analysis('CS_ipsilateral_1D_vs_RT_ipsilateral_6H', 
+                                                                               entrez_ids, 
+                                                                               'rno', 
+                                                                               org.Rn.eg.db)
+
+plot_volcano(CS_ipsilateral_7D_vs_RT_ipsilateral_6H , 0.05, 2, 'CS_ipsilateral_7D_vs_RT_ipsilateral_6H_padj_0.05_logfc_2')
+plot_volcano(CS_ipsilateral_7D_vs_RT_ipsilateral_6H , 0.05, 1.5, 'CS_ipsilateral_7D_vs_RT_ipsilateral_6H_padj_0.05_logfc_1.5')
+plot_volcano(CS_ipsilateral_7D_vs_RT_ipsilateral_6H , 0.05, 1, 'CS_ipsilateral_7D_vs_RT_ipsilateral_6H_padj_0.05_logfc_1')
+
+
+
+# 14D IPSI vs 6H RT IPSI
+CS_ipsilateral_14D_vs_RT_ipsilateral_6H <- make_comparisons(dds, 
+                                                            c("group", "CS_ipsilateral_14D", 
+                                                              "RT_ipsilateral_6H"),
+                                                            gene_names)
+write.csv(CS_ipsilateral_14D_vs_RT_ipsilateral_6H, 
+          './output/DESEQ/CS_ipsilateral_14D_vs_RT_ipsilateral_6H.csv')
+diff_genes <- get_diff_genes_subset(CS_ipsilateral_14D_vs_RT_ipsilateral_6H, 0.05, 2, human_rat)
+write.csv(diff_genes , './output/DESEQ/diff_CS_ipsilateral_14D_vs_RT_ipsilateral_6H.csv')
+
+##
+entrez_ids <- convert_to_entrez(rownames(diff_genes), org.Rn.eg.db)
+fun_res[['CS_ipsilateral_1D_vs_RT_ipsilateral_6H']] <- run_functional_analysis('CS_ipsilateral_1D_vs_RT_ipsilateral_6H', 
+                                                                               entrez_ids, 
+                                                                               'rno', 
+                                                                               org.Rn.eg.db)
+
+plot_volcano(CS_ipsilateral_14D_vs_RT_ipsilateral_6H , 0.05, 2, 'CS_ipsilateral_14D_vs_RT_ipsilateral_6H_padj_0.05_logfc_2')
+plot_volcano(CS_ipsilateral_14D_vs_RT_ipsilateral_6H , 0.05, 1.5, 'CS_ipsilateral_14D_vs_RT_ipsilateral_6H_padj_0.05_logfc_1.5')
+plot_volcano(CS_ipsilateral_14D_vs_RT_ipsilateral_6H , 0.05, 1, 'CS_ipsilateral_14D_vs_RT_ipsilateral_6H_padj_0.05_logfc_1')
+
+
 
 
 # Make dotplots
